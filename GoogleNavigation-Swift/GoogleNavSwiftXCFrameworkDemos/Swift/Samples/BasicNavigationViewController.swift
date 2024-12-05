@@ -11,6 +11,7 @@
 /// ANY KIND, either express or implied. See the License for the specific language governing
 /// permissions and limitations under the License.
 
+/// Samples/BasicNavigationViewController.swift
 import GoogleNavigation
 import UIKit
 
@@ -57,6 +58,8 @@ class BasicNavigationViewController: UIViewController {
 
     mapView.locationSimulator?.simulateLocation(
       at: ViewConstants.sampleStartingLocation)
+
+    setupTestButtons()
   }
 
   private func setupConstraints() {
@@ -103,6 +106,91 @@ class BasicNavigationViewController: UIViewController {
     super.viewWillDisappear(animated)
     stopNavigation()
   }
+
+  private enum TestConstants {
+    static let truckRouteToken =
+      "CvQCCvoBMvcBGtsBClYCFhJwvWg6RhUI66YQ3LWSAbON2wyE-dAMkoois5rXCNyDgArlsdDRngTepvrGngS53-eaoATKse6coASBkLS38BKCxrm38BKs5ye28R3bpLICzMdOABI4cGPaOLHInaNYaOJy8I1LuqL2nWFOIkUrmg9FosKwIrTlm3zZ4j4lmsJEc6rtbkdQdX5o07gbYQcaHACuBRjxAinICct-iwKGkgKbwAQBOuoD_____w8qDhQBWwICbHVqch0DHmsAMgQEAQMBPU_XOj9F4n4RP0iEzcm57IOfk_EBIhdFRHhQWjlfOUJ0ZWI2clFQOWRDMXVBMBAFGlwKWhIWCAAQAxAGEBMQEhgCQgQaAggFSgIIASIbChdEanhQWjZfSE90ZWI2clFQOWRDMXVBMHABKAQyIXRydWNraW5nOjpzZW1pLXRyYWlsZXItdHJ1Y2stc29mdCIVAACBmRZ8RQS4wOtLIN-ASA5VeylmEh4iHHRydWNraW5nOjpzZW1pLXRyYWlsZXItdHJ1Y2saGAoKDWev3hQVGclryhIKDfiv3hQVrMhryg"
+    static let harrisburgCoordinate = CLLocationCoordinate2D(
+      latitude: 40.305301,
+      longitude: -76.888941
+    )
+    static let memphisTNCoordinate = CLLocationCoordinate2D(
+      latitude: 35.013836,
+      longitude: -89.890594
+    )
+  }
+
+  private lazy var testButtonsStackView: UIStackView = {
+    let stackView = UIStackView()
+    stackView.axis = .vertical
+    stackView.spacing = 8
+    stackView.translatesAutoresizingMaskIntoConstraints = false
+    return stackView
+  }()
+
+  private func setupTestButtons() {
+    print("Setting up test buttons")
+    view.addSubview(testButtonsStackView)
+
+    NSLayoutConstraint.activate([
+      testButtonsStackView.topAnchor.constraint(
+        equalTo: instructionsLabel.bottomAnchor, constant: 8),
+      testButtonsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+      testButtonsStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+    ])
+
+    addTestButton(title: "Simulate Location: Memphis TN", action: #selector(simulateMemphisTNLocation))
+    addTestButton(title: "Truck Routing: Harrisburg PA", action: #selector(navigateToHarrisburg))
+    addTestButton(title: "Show Route Overview", action: #selector(showRouteOverview))
+    addTestButton(title: "Clear Destinations", action: #selector(clearDestinations))
+  }
+
+  private func addTestButton(title: String, action: Selector) {
+    let button = UIButton(type: .system)
+    button.setTitle(title, for: .normal)
+    button.backgroundColor = .darkGray
+    button.setTitleColor(.white, for: .normal)
+    button.layer.cornerRadius = 5
+    button.addTarget(self, action: action, for: .touchUpInside)
+    testButtonsStackView.addArrangedSubview(button)
+    print("Added button: \(title)")
+  }
+
+  @objc private func simulateMemphisTNLocation() {
+    print("Simulating Memphis TN location")
+    mapView.locationSimulator?.simulateLocation(at: TestConstants.memphisTNCoordinate)
+  }
+
+  @objc private func navigateToHarrisburg() {
+    print("Navigating to Harrisburg PA with truck route token")
+    guard
+      let waypoint = GMSNavigationWaypoint(
+        location: TestConstants.harrisburgCoordinate,
+        title: "Harrisburg PA"
+      )
+    else { return }
+
+    mapView.navigator?.setDestinations(
+      [waypoint],
+      routeToken: TestConstants.truckRouteToken
+    ) { [weak self] status in
+      print("Route status: \(status)")
+      if status == .OK {
+        self?.mapView.navigator?.isGuidanceActive = true
+      }
+    }
+  }
+
+  @objc private func showRouteOverview() {
+    print("Showing route overview")
+    mapView.cameraMode = .overview
+  }
+
+  @objc private func clearDestinations() {
+    print("Clearing destinations")
+    mapView.navigator?.clearDestinations()
+  }
+
 }
 
 // MARK: - GMSMapViewDelegate
